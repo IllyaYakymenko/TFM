@@ -63,7 +63,8 @@ cd auxdir
 #  Fila 3: Número de filas de un fichero
 #  Fila 4: Número de columnas de un fichero
 #  Fila 5: Phicentro, PsiCentro, Phirango, PsiRango
-#  Fila 6: Resolución Ramachandran
+#  Fila 6: Intervalo de registro
+#  Fila 7: PhiRel, PsiRel
 #
 ######################################################
 
