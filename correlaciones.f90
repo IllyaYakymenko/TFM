@@ -3,10 +3,10 @@
 !	#   Obtención del diagrama de Ramachandran para cada
 !	#   aminoácido.
 !	#   Input: Channel 10 (fichero _raman.dat)
-!	#	Output: Channel 20: Mapa de correlaciones de todos los aminoácidos
-!	#					21-> 20 + número de aminoácidos:
-!	#						Mapa de correlaciones de cada aminoácido
-!	#                       Canales dependientes de los aminoácidos de análisis
+!	#   Output: Channel 20: Mapa de correlaciones de todos los aminoácidos
+!	#	        21-> 20 + número de aminoácidos:
+!	#	        Mapa de correlaciones de cada aminoácido
+!	#              Canales dependientes de los aminoácidos de análisis
 !	#
 !	############################################################################
 
@@ -21,7 +21,7 @@ integer :: numfiles, resol, numrow, numcol, PhiRelAA, PsiRelAA
 character*200, allocatable :: filenames(:)
 real :: PhiMin, PhiMax, PsiMin, PsiMax
 
-! Definición de la matriz del diagrama
+! Definición de las matrices de análisis
 
 double precision, allocatable :: correlaciones(:,:,:), SPhiPsi(:,:,:), SPhi(:,:,:) 
 double precision, allocatable :: SPsi(:,:,:), SPhiCuad(:,:,:), SPsiCuad(:,:,:) 
@@ -48,6 +48,9 @@ read(5,*) resol
 
 numaa = numcol/2
 
+! Evaluación de los aminoácidos a analizar
+! Su valor depende de la relatividad de los ángulos
+! En casos de PhiRel y PsiRel distinta a 0 hay aminoácidos que no se analizarían
 from = 1
 to = numaa
 
@@ -77,13 +80,12 @@ allocate(outputs(from:to))
 ! En outputs se guardan por orden las salidas de cada amonoácido
 ! Hay tantos outputs como aminoácidos en el polipéptido
 ! Las frecuencias de todos los aminoácidos se guardan en la posición
-! numaa+1 de la primera dimensión de diagrama
 
 do ch=from, to
 	outputs(ch) = 20+ch	
 end do
 
-! Matrices vacias 
+! Matrices vacias (nulas)
 do diagaa=from, to+1
 	do row=1, resol
 		do col=1, resol
@@ -163,6 +165,7 @@ do waa=from, to+1
 
 				correlaciones(waa, dr, dc) = dSPhiPsi / (dSPhi*dSPsi)
 			else
+			! Si N es 0 o 1, no existe correlación, por lo cual, esos casos no aparecen en el mapa
 				correlaciones(waa, dr, dc) = -10
 			end if
 		end do
