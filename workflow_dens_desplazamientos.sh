@@ -52,21 +52,21 @@ for a in $lista; do
     echo "Descomprimiendo [$cont_fich/$maximo]"
 done
 
-#  Obtención de input para ramachandran.exe
+#  Obtención de input para dens_desplazamientos.exe
 
 cd auxdir
 > ../dens_desplazamientos.in
 
-##############################################
+######################################################
 #
 #  Fila 1: Número de ficheros
 #  Fila 2: Lista de ficheros a utilizar
 #  Fila 3: Número de filas de un fichero
 #  Fila 4: Número de columnas de un fichero
-#  Fila 5: PhiMin, PhiMax, PsiMin, PsiMax
-#  Fila 6: Resolución Ramachandran
+#  Fila 5: PhiCentro, PsiCentro, PhiRango, PsiRango
+#  Fila 6: 
 #
-##############################################
+######################################################
 
 
 # Lista de ficheros (_raman de cada tray)
@@ -82,15 +82,19 @@ echo $numfilas| awk '{print $1}' >> ../dens_desplazamientos.in
 # Número de columnas
 head -n1 $fich1 | wc -w >> ../dens_desplazamientos.in
 
-# PhiMin, PhiMax, PsiMin, PsiMax
-# Límites del diagrama (-180, 180);(-180, 180)
+# Límites del diagrama 
+# PhiCentro, PsiCentro, PhiRango, PsiRango
+# Análisis de la región centrada en (PhiCentro, PsiCentro)
+# con un rango de +/- PhiRango para el ángulo Phi y +/- PsiRango para Psi
 limang="$(echo $6, $7, $8, $9)"
 echo $limang >> ../dens_desplazamientos.in
 
-# Intervalo de registro
+# Intervalo de registro (resolución)
 echo $4 >> ../dens_desplazamientos.in
 
-# Rango límite
+# Rango límite (los límites de los mapas se establecen fuera de dens_desplazamientos.exe)
+# Ahorro del tiempo de cómputo
+# Se recomienda establecer rangos relativamente elevados (40) si no se conoce la amplitud aproximada
 echo $5 >> ../dens_desplazamientos.in
 
 # PhiRel, PsiRel
@@ -102,6 +106,12 @@ cp ../dens_desplazamientos.in ./dens_desplazamientos.in
 
 mv fort.20 "densPhiPsi_$1_$2_$3_resol$4_lim$5_Phi$6_$8_${10}_Psi$7_$9_${11}.matrix"
 mv fort.30 "denssumaresta_$1_$2_$3_resol$4_lim$5_Phi$6_$8_${10}_Psi$7_$9_${11}.matrix"
+
+# Generación de dos mapas:
+#     Mapa de dPhi vs dPsi
+#     Mapa de dPhi-dPsi vs dPhi+dPsi
+# 
+# siendo, dPhi y dPsi los desplazamientos de los ángulos
 
 rm -rf ../dens_desplazamientos_$1_$2_$3_resol$4_lim$5_Phi$6_$8_${10}_Psi$7_$9_${11}
 mkdir ../dens_desplazamientos_$1_$2_$3_resol$4_lim$5_Phi$6_$8_${10}_Psi$7_$9_${11}
