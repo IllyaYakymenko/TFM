@@ -87,11 +87,13 @@ cp ../ramachandran.exe ./ramachandran.exe
 cp ../ramachandran.in ./ramachandran.in
 ./ramachandran.exe < ramachandran.in
 
+# Diagrama global
 mv fort.20 "ramachandran_$1_$2_$3_resol$4_global.matrix"
 
 numcol="$(head -n1 $fich1 | wc -w)"
 numaa="$(expr $numcol / 2)" 
 
+# Diagramas por aminoácido
 for aa in $(seq 1 $numaa) ; do	
 	ch=$(($aa+20))
 	mv "fort.$ch" "ramachandran_$1_$2_$3_resol$4_aa_$aa.matrix"
