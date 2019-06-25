@@ -1,13 +1,13 @@
 #!/bin/bash
 
-################################################################
+####################################################################
 #  
 #  $1 = Nombre archivos
 #  $2 = Numero inicio ficheros
 #  $3 = Numero fin ficheros
-#  $4 = Registro de datos desde $4% del valor del módulo máximo
+#  $4 = Registro de datos mayores al $4% del valor del mayor módulo
 #
-################################################################
+#####################################################################
 
 rm -rf auxdir
 mkdir auxdir
@@ -50,17 +50,17 @@ cd auxdir
 cp ../mayores_modulos.exe ./mayores_modulos.exe
 > mayores_modulos.in
 
-###### Input de mayores_modulos.exe
+# Input de mayores_modulos.exe
 
-######################################################
+#########################################################################
 #
 #  Fila 1: Número de ficheros
 #  Fila 2: Lista de ficheros
 #  Fila 3: Número de filas
 #  Fila 4: Número de columnas
-#  Fila 5: % de datos extremos
+#  Fila 5: Registro de datos mayores al $4% del valor del mayor módulo
 #
-######################################################
+#########################################################################
 
 
 # Lista de ficheros (_raman de cada tray)
