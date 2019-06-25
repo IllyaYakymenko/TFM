@@ -51,7 +51,7 @@ for a in $lista; do
     echo "Descomprimiendo [$cont_fich/$maximo]"
 done
 
-#  Obtención de input para ramachandran.exe
+#  Obtención de input para distribuciones.exe
 
 cd auxdir
 > ../distribuciones.in
