@@ -56,16 +56,16 @@ done
 cd auxdir
 > ../distribuciones.in
 
-##############################################
+#######################################################
 #
 #  Fila 1: Número de ficheros
 #  Fila 2: Lista de ficheros a utilizar
 #  Fila 3: Número de filas de un fichero
 #  Fila 4: Número de columnas de un fichero
-#  Fila 5: PhiMin, PhiMax, PsiMin, PsiMax
+#  Fila 5: Phicentro, PsiCentro, Phirango, PsiRango
 #  Fila 6: Resolución Ramachandran
 #
-##############################################
+######################################################
 
 
 # Lista de ficheros (_raman de cada tray)
@@ -81,12 +81,15 @@ echo $numfilas| awk '{print $1}' >> ../distribuciones.in
 # Número de columnas
 head -n1 $fich1 | wc -w >> ../distribuciones.in
 
-# PhiMin, PhiMax, PsiMin, PsiMax
-# Límites del diagrama (-180, 180);(-180, 180)
+# Phicentro, PsiCentro, Phirango, PsiRango
+# Límites del diagrama
+# Registro de la región centrada en PhiCentro, PsiCentro
+# con rango +/- PhiRango para el ángulo Phi y +/- PsiRango para Psi 
 limang="$(echo $5, $6, $7, $8)"
 echo $limang >> ../distribuciones.in
 
 # Intervalo de registro
+# Tamaño de los rangos del histograma (en º)
 echo $4 >> ../distribuciones.in
 
 # RelPhi, RelPsi
@@ -96,6 +99,7 @@ cp ../distribuciones.exe ./distribuciones.exe
 cp ../distribuciones.in ./distribuciones.in
 ./distribuciones.exe < distribuciones.in
 
+# Genera numerosos mapas en un orden específico
 mv fort.21 "distdPhi_$1_$2_$3_resol$4_Phi$5_$7_$9_Psi$6_$8_${10}.hist"
 mv fort.22 "distdPsi_$1_$2_$3_resol$4_Phi$5_$7_$9_Psi$6_$8_${10}.hist"
 mv fort.23 "distdT_$1_$2_$3_resol$4_Phi$5_$7_$9_Psi$6_$8_${10}.hist"
