@@ -47,7 +47,7 @@ for a in $lista; do
 	echo "Descomprimiendo [$cont_fich/$maximo]"
 done
 
-#  Obtención de input para ramachandran.exe
+#  Obtención de input para mapa_modulos_totales.exe
 
 cd auxdir
 > ../mapa_modulos_totales.in
@@ -59,7 +59,8 @@ cd auxdir
 #  Fila 3: Número de filas de un fichero
 #  Fila 4: Número de columnas de un fichero
 #  Fila 5: PhiMin, PhiMax, PsiMin, PsiMax
-#  Fila 6: Resolución Ramachandran
+#  Fila 6: Resolución del mapa
+#  Fila 7: PhiRel, PsiRel
 #
 ##############################################
 
@@ -82,7 +83,7 @@ head -n1 $fich1 | wc -w >> ../mapa_modulos_totales.in
 limang="-180, 180, -180, 180"
 echo $limang >> ../mapa_modulos_totales.in
 
-# Resolución del diagrama
+# Resolución del mapa
 echo $4 >> ../mapa_modulos_totales.in
 
 #PhiRel, PsiRel
@@ -108,6 +109,8 @@ for aa in $(seq 1 $numaa) ; do
 	ch=$(($aa+50))
 	mv "fort.$ch" "mapa_totalesCuadrado_$1_$2_$3_resol$4_$5_$6_aa_$aa.matrix" 2> /dev/null
 done
+
+# Las salidas 20->30 generan los mapas de módulos D y las salidas 50->60 los de módulos D^2
 
 rm -rf ../mapa_totales_$1_$2_$3_resol$4_$5_$6_matrices
 mkdir ../mapa_totales_$1_$2_$3_resol$4_$5_$6_matrices
