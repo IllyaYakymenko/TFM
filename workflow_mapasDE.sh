@@ -56,8 +56,7 @@ cd auxdir
 #  Fila 2: Lista de ficheros a utilizar
 #  Fila 3: Número de filas de un fichero
 #  Fila 4: Número de columnas de un fichero
-#  Fila 5: PhiMin, PhiMax, PsiMin, PsiMax
-#  Fila 6: Resolución Ramachandran
+#  Fila 5: Resolución del mapa
 #
 ##############################################
 
@@ -75,7 +74,7 @@ echo $numfilas| awk '{print $1}' >> ../mapasDE.in
 # Número de columnas
 head -n1 $fich1 | wc -w >> ../mapasDE.in
 
-# Resolución del diagrama
+# Resolución del mapa
 echo $4 >> ../mapasDE.in
 
 cp ../mapasDE.exe ./mapasDE.exe
