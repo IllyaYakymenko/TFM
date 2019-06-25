@@ -1,13 +1,13 @@
 #!/bin/bash
 
-################################################################
+#########################################################################
 #  
 #  $1 = Nombre archivos
 #  $2 = Numero inicio ficheros
 #  $3 = Numero fin ficheros
-#  $4 = Registro de datos desde $4% del valor máximo/mínimo
+#  $4 = Registro de datos inferiores al $4% del valor del módulo mínimo
 #
-################################################################
+#########################################################################
 
 rm -rf auxdir
 mkdir auxdir
@@ -50,15 +50,15 @@ cd auxdir
 cp ../menores_modulos.exe ./menores_modulos.exe
 > menores_modulos.in
 
-######################################################
+############################################################################
 #
 #  Fila 1: Número de ficheros
 #  Fila 2: Lista de ficheros
 #  Fila 3: Número de filas
 #  Fila 4: Número de columnas
-#  Fila 5: % de datos extremos
+#  Fila 5: Registro de datos inferiores al $4% del valor del módulo mínimo
 #
-######################################################
+############################################################################
 
 
 # Lista de ficheros (_raman de cada tray)
