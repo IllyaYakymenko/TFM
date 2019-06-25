@@ -5,7 +5,7 @@
 #  $1 = Nombre archivos
 #  $2 = Numero inicio ficheros
 #  $3 = Numero fin ficheros
-#  $4 = Registro de datos desde $4% del valor máximo/mínimo
+#  $4 = Registro de datos desde $4% del valor del módulo máximo
 #
 ################################################################
 
@@ -49,6 +49,8 @@ cd auxdir
 
 cp ../mayores_modulos.exe ./mayores_modulos.exe
 > mayores_modulos.in
+
+###### Input de mayores_modulos.exe
 
 ######################################################
 #
