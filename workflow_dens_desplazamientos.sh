@@ -64,7 +64,9 @@ cd auxdir
 #  Fila 3: Número de filas de un fichero
 #  Fila 4: Número de columnas de un fichero
 #  Fila 5: PhiCentro, PsiCentro, PhiRango, PsiRango
-#  Fila 6: 
+#  Fila 6: Intervalo de registro
+#  Fila 7: Rango límite
+#  Fila 8: PhiRel, PsiRel
 #
 ######################################################
 
