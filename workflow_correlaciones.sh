@@ -47,6 +47,11 @@ done
 
 direc_lista=""
 
+# Lectura de los ángulos relativos a analizar desde angulosrelativos.input
+# Este archivo contiene dos columnas que indican los ángulos Phi y Phi relativos al análisis
+# Se efectúa de este modo para no borrar, copiar y descomprimir los archivos *.dat
+# De esta manera, el tiempo de cómputo disminuye significativamente
+
 #####################
 while read linea ; do
 #####################
@@ -69,6 +74,7 @@ cd auxdir
 #
 ##################################################
 
+# Relatividad de ángulos
 PhiRel="$(echo $linea | awk '{print $1}')"
 PsiRel="$(echo $linea | awk '{print $2}')"
 
@@ -101,6 +107,7 @@ cp ../correlaciones.exe ./correlaciones.exe
 cp ../correlaciones.in ./correlaciones.in
 ./correlaciones.exe < correlaciones.in
 
+# Mapa global
 mv fort.20 "correlaciones_$1_$2_$3_resol$4_Phi$PhiRel-Psi$PsiRel-global.matrix"
 
 numcol="$(head -n1 $fich1 | wc -w)"
@@ -108,6 +115,8 @@ numaa="$(expr $numcol / 2)"
 
 from=1
 to=$numaa
+
+# Evaluación del número de mapas generado
 
 if [[ $PhiRel -gt 0 || $PsiRel -gt 0 ]] ; then
 	if [[ $PhiRel -gt $PsiRel ]] ; then
@@ -125,6 +134,7 @@ if [[ $PhiRel -lt 0 || $PsiRel -lt 0 ]] ; then
 	fi
 fi
 
+# Renombramiento de los mapas de cada aminoácido
 for aa in $(seq $from $to) ; do	
 	ch=$(($aa+20))
 	mv "fort.$ch" "correlaciones_$1_$2_$3_resol$4_Phi$PhiRel-Psi$PsiRel-aa_$aa.matrix"
@@ -150,11 +160,15 @@ done < angulosrelativos.input
 
 mkdir correlaciones_$1_$2_$3_resol$4 2>/dev/null
 
+# Si existe el directorio, no se elimina para volver a crear otro
+# De esta manera se mantienen los mapas ya calculados
+# La idea es poder crear mapas de correlaciones no estudiadas y añadirlas a las existentes
+
 for directorio in $direc_lista ; do
 	mv $directorio ./correlaciones_$1_$2_$3_resol$4/$directorio
 done
 
-#rm -rf auxdir
+rm -rf auxdir
 
 
 
