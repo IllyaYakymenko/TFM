@@ -1,10 +1,10 @@
     
-!	#############################################################################
-!	#
-!	#   Obtención de distribuciones, medias y desviaciones estándar
-!	#   
-!	#   Input: Channel 10 (fichero _raman.dat)
-!	#   Output: Channel 21-28: Histogramas de distribuciones:
+! #############################################################################
+! #
+! #   Obtención de distribuciones, medias y desviaciones estándar
+! #   
+! #   Input: Channel 10 (fichero _raman.dat)
+! #   Output: Channel 21-28: Histogramas de distribuciones:
 ! #                      21 = dPhi
 ! #                      22 = dPsi
 ! #                      23 = dT (módulo)
@@ -13,9 +13,9 @@
 ! #                      26 = dPhi+dPhi (suma)
 ! #                      27 = dPhi-dPsi (resta)
 ! #                      28 = dTCuadSigno
-!	#           Channel 30: Medias y desviaciones estándar de las distribuciones
-!	#
-!	#############################################################################
+! #           Channel 30: Medias y desviaciones estándar de las distribuciones
+! #
+! #############################################################################
 
 program distribuciones
 
