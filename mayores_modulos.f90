@@ -1,3 +1,12 @@
+! #################################################################################
+! #
+! #   Obtención de datos sobre los mayores módulos
+! #   
+! #   Input: Channel 10 (fichero _raman.dat)
+! #   Output: Channel 20: Valores de los mayores módulos 
+! #
+! #################################################################################
+
 program mayores_modulos
 
 implicit none
@@ -35,7 +44,7 @@ allocate(desps(ncol))
 
 maxmodulo = 0.d0
 
-! Detectar máximo módulo
+! Detectar máximo módulo (primer bucle)
 
 print*, "Detectando módulo máximo"
 
@@ -66,9 +75,11 @@ do fileind = 1, numfiles
 	close(10)
 end do
 
+! Establecimiento del límite de registro
+! Se registran módulos cuyo valor sea >= a cmaxmodulo
 cmaxmodulo = maxmodulo - (maxmodulo * (perc/100))
 
-! Registro de valores cercanos a los máximos y mínimos
+! Registro de valores cercanos a los máximos (segundo bucle)
 
 print*, "Registrando valores"
 
@@ -93,6 +104,7 @@ do fileind = 1, numfiles
 
 			modulodesp = sqrt(dPhi*dPhi + dPsi*dPsi)
 
+			! Comprobación del tamaño del módulo para su escritura en el archivo de salida
 			if(modulodesp.ge.cmaxmodulo) then
 				write(20,*) modulodesp, aa, diedrosant(2*aa -1), diedrosant(2*aa), diedros(2*aa-1), diedros(2*aa), dPhi, dPsi, t
 			end if
