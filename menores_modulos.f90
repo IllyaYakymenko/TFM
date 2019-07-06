@@ -1,3 +1,12 @@
+! #################################################################################
+! #
+! #   Obtención de datos sobre los menores módulos
+! #   
+! #   Input: Channel 10 (fichero _raman.dat)
+! #   Output: Channel 20: Valores de los menores módulos 
+! #
+! #################################################################################
+
 program menores_modulos
 
 implicit none
