@@ -1,13 +1,13 @@
-!	###############################################################
-!	#
-!	#   Obtención del diagrama de Ramachandran para cada
-!	#   aminoácido.
-!	#   Input: Channel 10 (ficheros _raman.dat)
-!	#	Output: Channel 20: Ramachandran de todos los aminoácidos
-!	#					21-> 20 + número de aminoácidos
-!	#						Ramachandran de cada aminoácido
-!	#
-!	###############################################################
+! #################################################################
+! #
+! #   Obtención del diagrama de Ramachandran para cada aminoácido.
+! #
+! #   Input: Channel 10 (ficheros _raman.dat)
+! #   Output: Channel 20: Ramachandran de todos los aminoácidos
+! #                   21-> 20 + número de aminoácidos:
+! #                            Ramachandran de cada aminoácido
+! #
+! #################################################################
 
 
 program ramachandran
@@ -78,6 +78,7 @@ end do
 
 print*, 'Calculando el diagrama de Ramachandran'
 
+! Registro de cada la frecuencia de cada pareja de diedros
 do fileind=1, numfiles
 	open(10, file = filenames(fileind))
 	do rowiter=1, numrow
@@ -99,6 +100,7 @@ do fileind=1, numfiles
 	print '("Analizado: [", i3, "/", i3, "]")', fileind, numfiles
 end do
 
+! Normalización de la frecuencia del diagrama (en %)
 do waa=1, numaa+1
 	do diagrow=1, resol
 		do diagcol=1, resol
