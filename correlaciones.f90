@@ -155,6 +155,8 @@ do fileind=1, numfiles
 	print '("Analizado: [", i3, "/", i3, "]")', fileind, numfiles
 end do
 
+! Cálculo de correlaciones
+
 do waa=from, to+1
 	do dr=1, resol
 		do dc=1, resol
