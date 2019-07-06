@@ -1,0 +1,149 @@
+---
+title: "Densidades de correlación"
+author: "Illya Yakymenko"
+date: "17 de junio de 2019"
+output: html_document
+---
+
+```{r}
+dir <- "dens_desps"
+
+densPhiPsi <- new.env()
+denssumaresta <- new.env()
+
+carpetas <- list.files(dir)
+regiones <- c()
+
+for(c in carpetas){
+  Phipos <- gregexpr("Phi", c)[[1]]
+  region <- substr(c, 1, Phipos-2)
+  
+  regiones <- c(regiones, region)
+}
+
+regiones <- unique(regiones)
+
+for(r in regiones){
+  densPhiPsi[[r]] <- new.env()
+  denssumaresta[[r]] <- new.env()
+}
+
+```
+
+```{r include=F}
+library(readr)
+
+for(c in carpetas){
+  Phipos <- gregexpr("Phi", c)[[1]]
+  region <- substr(c, 1, Phipos-2)
+  rel <- substr(c, Phipos, nchar(c))
+  
+  PhiPsifn <- list.files(paste(dir, c, sep = "/"), pattern = "densPhiPsi")
+  sumarestafn <- list.files(paste(dir, c, sep = "/"), pattern = "denssumaresta")
+  
+  PhiPsimat <- as.matrix(read_table2(paste(dir, c, PhiPsifn, sep = "/"), col_names = F))
+  PhiPsidim <- dim(PhiPsimat)[1]
+  PhiPsimat <- t(PhiPsimat[1:PhiPsidim, 1:PhiPsidim])
+  PhiPsimat <- PhiPsimat/sum(PhiPsimat)
+  PhiPsimat[PhiPsimat == 0] <- NA
+  
+  sumarestamat <- as.matrix(read_table2(paste(dir, c, sumarestafn, sep = "/"), 
+                                        col_names = F))
+  sumarestadim <- dim(sumarestamat)[1]
+  sumarestamat <- t(sumarestamat[1:sumarestadim, 1:sumarestadim])
+  sumarestamat <- sumarestamat/sum(sumarestamat)
+  sumarestamat[sumarestamat == 0] <- NA
+  
+  densPhiPsi[[region]][[rel]] <- PhiPsimat
+  denssumaresta[[region]][[rel]] <- sumarestamat
+}
+```
+
+```{r}
+library(plot3D)
+
+for (env in ls(densPhiPsi)){
+  for(subenv in ls(densPhiPsi[[env]])){
+    mat <- densPhiPsi[[env]][[subenv]]
+    
+    x <- seq(-40, 40, 0.2)[-1]
+    y <- seq(-40, 40, 0.2)[-1]
+    axpos <- seq(-20, 20, 10)
+    axtext <- as.character(axpos)
+    axtext <- paste(axtext, "º", sep = "")
+    
+    
+    par(pin = c(3.25, 2.75))
+    image2D(x = x, y = y, z = mat, rasterImage = T, main = paste(env, subenv),
+            zlim = c(0, 0.0025), xlim = c(-25, 25), ylim = c(-25, 25),
+            xlab = expression(Delta~Phi), ylab = expression(Delta~Psi),
+            xaxt = "n", yaxt = "n", asp = 1)
+    abline(v = 0)
+    abline(h = 0)
+    par(pin = c(3.32, 2.75))
+    axis(side = 2, at=axpos, labels = axtext)
+    par(pin = c(3.32, 2.75))
+    axis(side = 1, at=axpos, labels = axtext)
+    
+  }
+}
+```
+
+
+```{r}
+for (env in ls(denssumaresta)){
+  for(subenv in ls(denssumaresta[[env]])){
+    mat <- denssumaresta[[env]][[subenv]]
+    
+    x <- seq(-40, 40, 0.2)[-1]
+    y <- seq(-40, 40, 0.2)[-1]
+    
+    
+    par(pin = c(3.25, 2.75))
+    image2D(x = x, y = y, z = mat, rasterImage = T, main = paste(env, subenv),
+            zlim = c(0, 0.0015), xlim = c(-35, 35), ylim = c(-35, 35),
+            xlab = expression(Delta~Phi - Delta~Psi), 
+            ylab = expression(Delta~Phi + Delta~Psi))
+    abline(v = 0)
+    abline(h = 0)
+    
+  }
+}
+```
+
+
+```{r}
+mc <- densPhiPsi[["Espectro Completo"]][["Phi 0 Psi 0"]]
+
+x <- seq(-40, 40, 0.2)[-1]
+y <- seq(-40, 40, 0.2)[-1]
+
+axpos <- seq(-20, 20, 10)
+axtext <- as.character(axpos)
+axtext <- paste(axtext, "º", sep = "")
+
+
+par(pin = c(3.25, 2.75))
+image2D(x = x, y = y, z = mc, rasterImage = T,
+        main = "Densidad de desplazamientos",
+        zlim = c(0, 0.0015), xlim = c(-25, 25), ylim = c(-25, 25),
+        xlab = expression(Delta*Phi), 
+        ylab = expression(Delta*Psi), xaxt = "n", yaxt = "n")
+par(pin = c(3.32, 2.75))
+axis(side = 2, at=axpos, labels = axtext)
+axis(side = 1, at=axpos, labels = axtext)
+
+abline(v = 0)
+abline(h = 0)
+```
+
+
+
+
+
+
+
+
+
+
+
