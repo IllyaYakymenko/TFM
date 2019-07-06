@@ -1,15 +1,15 @@
-!	############################################################################
-!	#
-!	#   Obtención mapas de módulos para cada
-!	#   aminoácido.
-!	#   Input: Channel 10 (fichero _raman.dat)
-!	#   Output: Channel 20: Mapa de módulos de todos los aminoácidos
-!	#					21-> 20 + número de aminoácidos:
-!	#						Mapa de módulos de cada aminoácido
-!	#                       Canales dependientes de los aminoácidos de análisis
-!	#
-!	############################################################################
-
+! ############################################################################
+! #
+! #   Obtención mapas de módulos para cada aminoácido
+! #   
+! #   Input: Channel 10 (fichero _raman.dat)
+! #   Output: Channel 20 -> 20 + número de aminoácidos:
+! #                  Mapas del valor medio de los desplazamientos de T
+! #           Channel 50 -> 50 + número de aminoácidos:
+! #                  Mapas del valor medio de los desplazamientos de T^2
+! #
+! #
+! ############################################################################
 
 program mapa_modulos_totales
 
@@ -47,6 +47,10 @@ read(5,*) PhiRel, PsiRel
 
 numaa = ncol/2
 
+! Evaluación de los aminoácidos a analizar
+! Su valor depende de la relatividad de los ángulos
+! En casos de PhiRel y PsiRel distinta a 0 hay aminoácidos que no se analizarían
+
 from = 1
 to = numaa
 
@@ -82,7 +86,7 @@ do ch=from, to
 	outputsTCuad(ch) = 50+ch
 end do
 
-! Matrices vacias 
+! Matrices vacias (nulas)
 do diagaa=from, to+1
 	do row=1, resol
 		do col=1, resol
@@ -128,7 +132,7 @@ do fileind=1, numfiles
 			dPhi = desps(2*aa-1 + 2*PhiRel)
 			dPsi = desps(2*aa + 2*PsiRel)
 
-			! Registro de los desps en las distintas matrices
+			! Cálculo de los módulos de interés
 			modT = sqrt(dPhi*dPhi + dPsi*dPsi)
 			modTCuad = dPhi*dPhi + dPsi*dPsi
 
@@ -147,6 +151,7 @@ do fileind=1, numfiles
 	print '("Analizado: [", i3, "/", i3, "]")', fileind, numfiles
 end do
 
+! Cálculo de los valores medios de los desplazamientos en cada posición del mapa
 do aa=from, to+1
 	do dr=1, resol
 		do dc=1, resol
