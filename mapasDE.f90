@@ -1,3 +1,15 @@
+! #################################################################################
+! #
+! #   Obtención de mapas de desplazamientos estándar
+! #   
+! #   Input: Channel 10 (fichero _raman.dat)
+! #   Output: Channel 20: Mapa Sigma Phi(i) 
+! #	                  21: Mapa Sigma Psi(i)
+! #                   22: Mapa Sigma Phi(i+1)
+! #                   23: Mapa Sigma Psi(i-1)
+! #
+! #################################################################################
+
 program mapasDE
 
 implicit none
@@ -79,7 +91,7 @@ rangoPsi = 360/resol
 
 print*, 'Calculando medias'
 
-! Sumatorio de desplazamientos para calcular la media
+! Registro de sumatorios para el cálculo de medias (primer bucle)
 
 do fileind=1, numfiles
 	open(10, file = filenames(fileind))
@@ -105,18 +117,23 @@ do fileind=1, numfiles
 				diagPsi=resol
 			end if
 
+			! Sumatorios de desplazamientos de ángulos pertenecientes al mismo residuo
 			dPhi = desps(2*aa -1)
 			dPsi = desps(2*aa)
 			NPhiPsi(diagPsi, diagPhi) = NPhiPsi(diagPsi, diagPhi) +1
 			SumaPhi(diagPsi, diagPhi) = SumaPhi(diagPsi, diagPhi) + dPhi
 			SumaPsi(diagPsi, diagPhi) = SumaPsi(diagPsi, diagPhi) + dPsi
 
+			! Sumatorios de desplazamientos de Psi del residuo anterior
+			! El residuo 1 no posee ángulo Psi anterior al residuo 1
 			if(aa.ge.2) then
 				NAnt(diagPsi, diagPhi) = NAnt(diagPsi, diagPhi) +1
 				dPsiAnt = desps(2*aa-2)
 				SumaPsiAnt(diagPsi, diagPhi) = SumaPsiAnt(diagPsi, diagPhi) + dPsiAnt
 			end if
 
+			! Sumatorios de desplazamientos de Phi del residuo posterior
+			! El residuo numaa no posee ángulo Phi anterior al residuo numaa
 			if(aa.le.numaa-1) then
 				NPost(diagPsi, diagPhi) = NPost(diagPsi, diagPhi) +1
 				dPhiPost = desps(2*aa+1)
@@ -159,7 +176,7 @@ end do
 
 print*, 'Registrando desviación estándar'
 
-! Sumatorio para calcular sigma
+! Registro de sumatorios para el cálculo de desviaciones estándar (segundo bucle)
 
 do fileind=1, numfiles
 	open(10, file = filenames(fileind))
@@ -185,16 +202,19 @@ do fileind=1, numfiles
 				diagPsi=resol
 			end if
 
+			! Ángulos del mismo residuo
 			dPhi = desps(2*aa -1)
 			dPsi = desps(2*aa)
 			SSigmaPhi(diagPsi,diagPhi)=SSigmaPhi(diagPsi,diagPhi)+(MediaPhi(diagPsi,diagPhi)-dPhi)**2
 			SSigmaPsi(diagPsi,diagPhi)=SSigmaPsi(diagPsi,diagPhi)+(MediaPsi(diagPsi,diagPhi)-dPsi)**2
 
+			! Ángulo del residuo anterior
 			if(aa.ge.2) then
 				dPsiAnt = desps(2*aa-2)
 				SSigmaPsiAnt(diagPsi,diagPhi)=SSigmaPsiAnt(diagPsi,diagPhi)+(MediaPsiAnt(diagPsi,diagPhi)-dPsiAnt)**2
 			end if
 
+			! Ángulo del residuo posterior
 			if(aa.le.numaa-1) then
 				dPhiPost = desps(2*aa+1)
 				SSigmaPhiPost(diagPsi,diagPhi)=SSigmaPhiPost(diagPsi,diagPhi)+(MediaPhiPost(diagPsi,diagPhi)-dPhiPost)**2
@@ -233,7 +253,7 @@ do row=1, resol
 	end do
 end do
 
-! Escribiendo los resultados en sus archivos
+! Escritura los resultados
 
 do row=1, resol
 	write(20,*) (SigmaPhi(row, col), col=1, resol)
