@@ -35,9 +35,9 @@ allocate(desps(ncol))
 
 maxmodulo = 0.d0
 
-! Detectar máximo módulo
+! Detectar máximo módulo (primer bucle)
 
-print*, "Detectando módulo mínimo"
+print*, "Detectando módulo máximo"
 
 do fileind = 1, numfiles
 	open(10, file = filenames(fileind))
@@ -66,9 +66,11 @@ do fileind = 1, numfiles
 	close(10)
 end do
 
+! Establecimiento del límite de registro
+! Se registran módulos cuyo valor sea <= a cmaxmodulo
 cmaxmodulo = maxmodulo * (perc/100)
 
-! Registro de valores menores al vector dado
+! Registro de valores cercanos a los mínimos (segundo bucle)
 
 print*, "Registrando valores"
 
@@ -93,6 +95,7 @@ do fileind = 1, numfiles
 
 			modulodesp = sqrt(dPhi*dPhi + dPsi*dPsi)
 
+			! Comprobación del tamaño del módulo para su escritura en el archivo de salida
 			if(modulodesp.le.cmaxmodulo) then
 				write(20,*) modulodesp, aa, diedrosant(2*aa -1), diedrosant(2*aa), diedros(2*aa-1), diedros(2*aa), dPhi, dPsi, t
 			end if
