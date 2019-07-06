@@ -1,0 +1,855 @@
+---
+title: "Ramachandran y correlaciones"
+author: "Illya Yakymenko"
+date: "16 de mayo de 2019"
+output: html_document
+---
+
+```{r cache=TRUE}
+dir.trabajo <- "./rama360"
+files <- list.files(dir.trabajo)
+
+nombre.matrices <- c()
+  
+for (file in files){
+  if (grepl("aa_[0-9]+.matrix$", file)){
+    pos <- gregexpr("aa_[0-9]+.matrix$", file)
+    nombre <- substr(file, pos[[1]], nchar(file)-7)
+    nombre.matrices <- c(nombre.matrices, nombre)
+  }
+  else if(grepl("global.matrix$", file)){
+    pos <- gregexpr("global.matrix", file)
+    nombre <- substr(file, pos[[1]], nchar(file)-7)
+    nombre.matrices <- c(nombre.matrices, nombre)
+  }
+}
+```
+
+```{r include=FALSE}
+diagramas <- list()
+
+for (i in seq(length(files))){
+  dir.file <- paste0(dir.trabajo, "/", files[i])
+  namedf <- nombre.matrices[i]
+  diagramas[[namedf]] <- as.matrix(readr::read_table2(dir.file, col_names = FALSE))
+}
+```
+
+
+```{r}
+diagramas_log <- new.env()
+
+for (aa in nombre.matrices){
+  diagramas[[aa]][diagramas[[aa]] < 0] <- NA
+  matrix <- diagramas[[aa]]
+  matrix <- log(matrix)
+  diagramas_log[[aa]] <- matrix
+}
+```
+
+```{r}
+library(plot3D)
+```
+
+```{r}
+for (aa in nombre.matrices){
+  x <- seq(-180, 180, by = ncol(diagramas[[aa]])/360)
+  x <- x[-length(x)]
+  y <- seq(-180, 180, by = nrow(diagramas[[aa]])/360)
+  y <- y[-length(y)]
+  
+  par(pin = c(3.32, 2.75))
+  #ck <- colkey(cex.clab = 0.75, clim = c(-15, -1))
+  image2D(x = x, y = y, 
+          z = diagramas[[aa]], main = paste("Ramachandran ", aa), lighting = T, 
+          clog = T, xlab = expression(Phi), ylab = expression(Psi), 
+          #clab = c("Densidad en" ,"escala logarítmica"), 
+          xlim = c(-180, 180),
+          ylim = c(-180, 180), 
+          colkey = list(cex.clab = 0.75), rasterImage = T,
+          contour = F, asp = 1, cex.axis = 0.75)
+}
+```
+
+```{r}
+maximos.locales <- new.env()
+
+for (diag in ls(diagramas)){
+  maximos.locales[[diag]] <- new.env()
+  
+  matrix <- diagramas[[diag]]
+  matrix.exp <- matrix(nrow = 1080, ncol = 1080)
+  matrix.exp[1:360, 1:360] <- matrix
+  matrix.exp[1:360, 361:720] <- matrix
+  matrix.exp[1:360, 721:1080] <- matrix
+  matrix.exp[361:720, 1:360] <- matrix
+  matrix.exp[361:720, 361:720] <- matrix
+  matrix.exp[361:720, 721:1080] <- matrix
+  matrix.exp[721:1080, 1:360] <- matrix
+  matrix.exp[721:1080, 361:720] <- matrix
+  matrix.exp[721:1080, 721:1080] <- matrix
+  
+  matrix.exp[is.na(matrix.exp)] <- 0
+  
+  ext <- 12
+  
+  maximosPhi <- c()
+  maximosPsi <- c()
+  
+  for (row in seq(361, 720, 1)){
+    for (col in seq(361, 720, 1)){
+      rowfrom <- row-ext
+      rowto <- row+ext
+      colfrom <- col-ext
+      colto <- col+ext
+      
+      valor <- matrix.exp[row, col]
+      
+      if (valor > 5e-04){
+        submatrix <- matrix.exp[rowfrom:rowto, colfrom:colto]
+        if (valor == max(submatrix)){
+          maximosPhi <- c(maximosPhi, row)
+          maximosPsi <- c(maximosPsi, col)
+        }
+      }
+    }
+  }
+  maximosPhi <- maximosPhi - 360 -180
+  maximosPsi <- maximosPsi - 360 -180
+  
+  maximos.locales[[diag]][["Phi"]] <- maximosPhi
+  maximos.locales[[diag]][["Psi"]] <- maximosPsi
+}
+
+```
+
+
+```{r}
+for (aa in ls(diagramas)){
+  x <- seq(-180, 180, by = ncol(diagramas[[aa]])/360)
+  x <- x[-length(x)]
+  y <- seq(-180, 180, by = nrow(diagramas[[aa]])/360)
+  y <- y[-length(y)]
+  
+  if(aa == "global"){
+    main <- "global"
+  }
+  else{
+    amin <- substr(aa, 4, nchar(aa))
+    main <- paste("aminoácido", amin)
+  }
+  
+  par(pin = c(3.32, 2.75))
+  #ck <- colkey(cex.clab = 0.75, clim = c(-15, -1))
+  image2D(x = x, y = y, z = diagramas[[aa]], main = paste("Ramachandran ", main),
+          lighting = T, clog = T, xlab = expression(Phi), ylab = expression(Psi), 
+          clab = c("Densidad en" ,"escala logarítmica"), xlim = c(-180, 180),
+          ylim = c(-180, 180), colkey = list(cex.clab = 0.75), rasterImage = T,
+          contour = F, asp = 1, cex.axis = 0.75)
+  
+  for (p in seq(length(maximos.locales[[aa]][["Phi"]]))){
+    points(maximos.locales[[aa]][["Phi"]][p], maximos.locales[[aa]][["Psi"]][p], 
+           pch =  3, cex = 2, lwd = 3, col = "black")
+  }
+  
+  
+  
+}
+```
+
+
+```{r include=FALSE}
+dir.trabajo <- "./c360_por_aa"
+carpetas <- list.files(dir.trabajo)
+
+corr360 <- new.env()
+
+for (carpeta in carpetas){
+  corr360[[carpeta]] <- new.env()
+  dir.matrix <- paste(dir.trabajo, carpeta, sep = "/")
+  files <- list.files(dir.matrix)
+  for (file in files){
+    dir.file <- paste(dir.matrix, file, sep = "/")
+    matrix <- as.matrix(readr::read_table2(dir.file, col_names = F))
+    if(dim(matrix)[2] == 361){
+      matrix <- matrix[, -361]
+    }
+    corr360[[carpeta]][[file]] <- matrix
+    
+  }
+}
+
+```
+
+
+```{r}
+library(plot3D)
+library(grDevices)
+```
+
+```{r}
+x <- seq(-180, 180, by = 1)
+x <- x[-length(x)]
+y <- seq(-180, 180, by = 1)
+y <- y[-length(y)]
+
+for (subenv in ls(corr360)){
+  for (mat in ls(corr360[[subenv]])){
+    
+    corr.matrix <- corr360[[subenv]][[mat]]
+    corr.matrix[corr.matrix < -5] <- NA
+    corr.matrix = t(corr.matrix)
+    
+    posPhi <- gregexpr("Phi", mat)[[1]]
+    posPsi <- gregexpr("Psi", mat)[[1]]
+    posmatrix <- gregexpr(".matrix", mat)[[1]]
+    
+    if(grepl("global", mat)){
+      posaa <- gregexpr("global.matrix", mat)[[1]]
+      main.im <- "Correlación globales"
+    }
+    else {
+      posaa <- gregexpr("aa_", mat)[[1]]
+      aa_ind <- substr(mat, posaa+3, posmatrix-1)
+      main.im <- paste("Correlación del aminoácido ", aa_ind)
+    }
+    
+    
+    # Relativos de Phi y Psi
+    relPhi <- substr(mat, posPhi+3, posPsi-2)
+    relPsi <- substr(mat, posPsi+3, posaa-2)
+    
+    if(relPhi == 0){
+      philab <- expression(Phi)
+    }
+    else {
+      if (grepl("-", relPhi)){
+        philab <- expression(paste(Phi, -1))
+      }
+      else{
+        philab <- expression(paste(Phi, "+", 1))
+      }
+    }
+    
+    if(relPsi == 0){
+      psilab <- expression(Psi)
+    }
+    else {
+      if (grepl("-", relPsi)){
+        psilab <-expression(paste(Psi, -1))
+      }
+      else{
+        psilab <- expression(paste(Psi, "+", 1))
+      }
+    }
+    
+    par(pin = c(3.32, 2.75))
+    image2D(x = x, y = y, z = corr.matrix, 
+            main = main.im, lighting = F, clog = F, clab = "Correlación",
+            xlab = philab, ylab = psilab, xlim = c(-180, 180), 
+            ylim = c(-180, 180), rasterImage = T, zlim = c(-1, 1),
+            contour = F, asp = 1, cex.axis = 0.75)
+    
+  }
+}
+```
+
+
+```{r}
+x <- seq(-180, 180, by = 1)
+x <- x[-length(x)]
+y <- seq(-180, 180, by = 1)
+y <- y[-length(y)]
+
+for (subenv in ls(corr360)){
+  for (mat in ls(corr360[[subenv]])){
+    
+    corr.matrix <- corr360[[subenv]][[mat]]
+    corr.matrix[corr.matrix < -5] <- NA
+    corr.matrix = t(corr.matrix)
+    
+    posPhi <- gregexpr("Phi", mat)[[1]]
+    posPsi <- gregexpr("Psi", mat)[[1]]
+    posmatrix <- gregexpr(".matrix", mat)[[1]]
+    
+    if(grepl("global", mat)){
+      posaa <- gregexpr("global.matrix", mat)[[1]]
+      main.im <- "Correlación globales"
+    }
+    else {
+      posaa <- gregexpr("aa_", mat)[[1]]
+      aa_ind <- substr(mat, posaa+3, posmatrix-1)
+      main.im <- paste("Correlación del aminoácido ", aa_ind)
+    }
+    
+    nom.aa <- substr(mat, posaa, posmatrix-1)
+    
+    # Relativos de Phi y Psi
+    relPhi <- substr(mat, posPhi+3, posPsi-2)
+    relPsi <- substr(mat, posPsi+3, posaa-2)
+    
+    if(relPhi == 0){
+      philab <- expression(Phi)
+    }
+    else {
+      if (grepl("-", relPhi)){
+        philab <- expression(paste(Phi, -1))
+      }
+      else{
+        philab <- expression(paste(Phi, "+", 1))
+      }
+    }
+    
+    if(relPsi == 0){
+      psilab <- expression(Psi)
+    }
+    else {
+      if (grepl("-", relPsi)){
+        psilab <-expression(paste(Psi, -1))
+      }
+      else{
+        psilab <- expression(paste(Psi, "+", 1))
+      }
+    }
+    
+    par(pin = c(3.32, 2.75))
+    image2D(x = x, y = y, z = corr.matrix, 
+            main = main.im, lighting = F, clog = F, clab = "Correlación",
+            xlab = philab, ylab = psilab, xlim = c(-180, 180), 
+            ylim = c(-180, 180), rasterImage = T, zlim = c(-1, 1),
+            contour = F, asp = 1, cex.axis = 0.75)
+    
+    for (p in seq(length(maximos.locales[[nom.aa]][["Phi"]]))){
+    points(maximos.locales[[nom.aa]][["Phi"]][p],
+           maximos.locales[[nom.aa]][["Psi"]][p], 
+           pch =  0, cex = 3, lwd = 3, col = "black", xlim = c(-180, 180), 
+           ylim = c(-180,180))
+  }
+    
+  }
+}
+```
+
+```{r}
+media.regiones <- new.env()
+
+for (diag in ls(corr360)){
+  if(grepl("global", diag)){
+    subcorr <- "global"
+  }
+  else {
+    posaa <- gregexpr("aa_", diag)[[1]]
+    subcorr <- substr(diag, posaa, nchar(diag))
+  }
+  
+  media.regiones[[subcorr]] <- new.env()
+  
+  for (ci in ls(corr360[[diag]])){
+    posPhi <- gregexpr("Phi", ci)[[1]]
+    posPsi <- gregexpr("Psi", ci)[[1]]
+    posmatrix <- gregexpr(".matrix", ci)[[1]]
+      
+    if(grepl("global", ci)){
+      posaa <- gregexpr("global.matrix", ci)[[1]]
+      aa_ind <- "global"
+      num.aa <- "global"
+    }
+    else {
+      posaa <- gregexpr("aa_", ci)[[1]]
+      aa_ind <- substr(ci, posaa, posmatrix-1)
+      num.aa <- substr(ci, posaa+3, posmatrix-1)
+    }
+    
+    # Relativos de Phi y Psi
+    relPhi <- substr(ci, posPhi+3, posPsi-2)
+    relPsi <- substr(ci, posPsi+3, posaa-2)
+    
+    matrix <- t(corr360[[diag]][[ci]])
+    matrix[matrix < -2] <- NA
+    
+    matrix.exp <- matrix(nrow = 1080, ncol = 1080)
+    matrix.exp[1:360, 1:360] <- matrix
+    matrix.exp[1:360, 361:720] <- matrix
+    matrix.exp[1:360, 721:1080] <- matrix
+    matrix.exp[361:720, 1:360] <- matrix
+    matrix.exp[361:720, 361:720] <- matrix
+    matrix.exp[361:720, 721:1080] <- matrix
+    matrix.exp[721:1080, 1:360] <- matrix
+    matrix.exp[721:1080, 361:720] <- matrix
+    matrix.exp[721:1080, 721:1080] <- matrix
+    
+    #matrix.exp[is.na(matrix.exp)] <- 0
+    
+    ext <- 10
+    
+    df <- as.matrix(t(c("Phi", "Psi", "Media")))
+    
+    for (ang in seq(length(maximos.locales[[aa_ind]][["Phi"]]))){
+      phi <- maximos.locales[[aa_ind]][["Phi"]][ang]
+      psi <- maximos.locales[[aa_ind]][["Psi"]][ang]
+      phimat <- phi +360 +180
+      psimat <- psi +360 +180
+      
+      phifrom <- phimat - 10
+      phito <- phimat + 10
+      psifrom <- psimat - 10
+      psito <- psimat + 10
+      
+      submat <- matrix.exp[phifrom:phito, psifrom:psito]
+      media <- mean(submat, na.rm = T)
+      
+      medbind <- as.matrix(t(c(phi, psi, media)))
+      df <- rbind(df, medbind)
+    }
+    
+    dfname <- paste("Phi", relPhi, "Psi", relPsi)
+    
+    media.regiones[[subcorr]][[dfname]] <- df
+    
+    # x <- seq(1,1080, 1)
+    # y <- seq(1,1080, 1)
+    # 
+    # image2D(x = x, y = y, z = matrix.exp, zlim = c(-1, 1), rasterImage = T, 
+    #         xlim = c(0, 1080), ylim = c(0, 1080), asp = 1)
+    # 
+    # for (ang in seq(length(maximos.locales[[aa_ind]][["Phi"]]))){
+    #   phimat <- maximos.locales[[aa_ind]][["Phi"]][ang] +360 +180
+    #   psimat <- maximos.locales[[aa_ind]][["Psi"]][ang] +360 +180
+    #   
+    #   points(phimat, psimat, pch=3, cex=2, col="black")
+    # }
+  }
+}
+
+```
+
+```{r}
+tabla.regiones <- new.env()
+
+for(aa in ls(media.regiones)){
+  tabla.regiones[[aa]] <- new.env()
+  
+  regs <- as.matrix(c(aa, "Alfa R", "pPII", "Beta", "Alfa\'", "Alfa L"))
+  
+  for (rel in ls(media.regiones[[aa]])){
+    
+    alfaR <- NA
+    pPII <- NA
+    beta <- NA
+    alfa2 <- NA
+    alfaL <- NA
+    
+    for (i in seq(2, dim(media.regiones[[aa]][[rel]])[1])){
+      phi <- as.integer(media.regiones[[aa]][[rel]][i,1])
+      psi <- as.integer(media.regiones[[aa]][[rel]][i,2])
+      
+      ## AlfaR
+      if (phi > -70 && phi < -50 && psi > -50 && psi < -20){
+        alfaR <- media.regiones[[aa]][[rel]][i,3]
+      }
+      ## pPII
+      else if (phi > -100 && phi < -50 && psi > 120 && psi < 170){
+        pPII <- media.regiones[[aa]][[rel]][i,3]
+      }
+      ## beta
+      else if (phi > -170 && phi < -120 && psi > 140 && psi < 175){
+        beta <- media.regiones[[aa]][[rel]][i,3]
+      }
+      ## alfa2
+      else if (phi > -120 && phi < -70 && psi > -30 && psi < 30){
+        alfa2 <- media.regiones[[aa]][[rel]][i,3]
+      }
+      ## alfaL
+      else if (phi > 40 && phi < 80 && psi > 20 && psi < 70){
+        alfaL <- media.regiones[[aa]][[rel]][i,3]
+      }
+    }
+    
+    col <- as.matrix(c(rel, alfaR, pPII, beta, alfa2, alfaL))
+    regs <- cbind(regs, col)
+  }
+  
+  tabla.regiones[[aa]][["Tabla"]] <- regs
+}
+```
+
+```{r}
+for (aa in ls(tabla.regiones)){
+  tabla <- tabla.regiones[[aa]][["Tabla"]]
+  tabla[2:nrow(tabla),2:ncol(tabla)] <- round(as.double(tabla[2:nrow(tabla),2:ncol(tabla)]), 3)
+  
+  cn <- tabla[1,]
+  tabla <- as.data.frame(tabla[2:nrow(tabla),])
+  names(tabla) <- cn
+  
+  print(tabla)
+}
+```
+
+
+```{r}
+
+PhiCenter = c(-157, -97, 61, -63, -62)
+PsiCenter = c(164, 2, 46, -41, 147)
+
+axpos <- seq(-150, 150, 50)
+axtext <- as.character(axpos)
+axtext <- paste(axtext, "º", sep = "")
+
+
+mat <- corr360[["correlaciones_decala-eqNVE_1_112_resol360_global"]][["correlaciones_decala-eqNVE_1_112_resol360_Phi0-Psi-1-global.matrix"]]
+mat <- t(mat)
+par(pin = c(3.32, 2.75))
+image2D(x = x, y = y, z = mat, 
+        main = expression(paste("Correlación entre ", Delta*Phi[i], " y ", Delta*Psi[i-1])), 
+        lighting = F, clog = F, clab = "r",
+        xlab = expression(Phi[i]), ylab = expression(Psi[i]), xlim = c(-180, 180), 
+        ylim = c(-180, 180), rasterImage = T, zlim = c(-1, 1),
+        contour = F, asp = 1, xaxt = "n", yaxt = "n")
+
+par(pin = c(3.32, 2.75))
+axis(side = 2, at=axpos, labels = axtext, cex.axis = 0.70)
+axis(side = 1, at=axpos, labels = axtext, cex.axis = 0.70)
+
+for(ang in seq(length(PhiCenter))){
+  tl <- c(PhiCenter[ang]-10, PsiCenter[ang]+10)
+  tr <- c(PhiCenter[ang]+10, PsiCenter[ang]+10)
+  bl <- c(PhiCenter[ang]-10, PsiCenter[ang]-10)
+  br <- c(PhiCenter[ang]+10, PsiCenter[ang]-10)
+  
+  segments(x0 = tl[1], y0=tl[2], x1=tr[1], y1=tr[2])
+  segments(x0 = tl[1], y0=tl[2], x1=bl[1], y1=bl[2])
+  segments(x0 = br[1], y0=br[2], x1=bl[1], y1=bl[2])
+  segments(x0 = br[1], y0=br[2], x1=tr[1], y1=tr[2])
+}
+
+text(PhiCenter[1]+20, PsiCenter[1], labels=expression(beta))
+text(PhiCenter[2]+22, PsiCenter[2], labels=expression(paste(alpha, "'")))
+text(PhiCenter[3]+25, PsiCenter[3], labels=expression(alpha[L]))
+text(PhiCenter[4]+25, PsiCenter[4], labels=expression(alpha[R]))
+text(PhiCenter[5]+30, PsiCenter[5], labels=expression(PPII))
+
+
+
+
+mat <- corr360[["correlaciones_decala-eqNVE_1_112_resol360_global"]][["correlaciones_decala-eqNVE_1_112_resol360_Phi0-Psi0-global.matrix"]]
+mat <- t(mat)
+par(pin = c(3.32, 2.75))
+image2D(x = x, y = y, z = mat, 
+        main = expression(paste("Correlación entre ", Delta*Phi[i], " y ", Delta*Psi[i])), 
+        lighting = F, clog = F, clab = "r",
+        xlab = expression(Phi[i]), ylab = expression(Psi[i]), xlim = c(-180, 180), 
+        ylim = c(-180, 180), rasterImage = T, zlim = c(-1, 1),
+        contour = F, asp = 1, xaxt = "n", yaxt = "n")
+
+par(pin = c(3.32, 2.75))
+axis(side = 2, at=axpos, labels = axtext, cex.axis = 0.70)
+axis(side = 1, at=axpos, labels = axtext, cex.axis = 0.70)
+
+for(ang in seq(length(PhiCenter))){
+  tl <- c(PhiCenter[ang]-10, PsiCenter[ang]+10)
+  tr <- c(PhiCenter[ang]+10, PsiCenter[ang]+10)
+  bl <- c(PhiCenter[ang]-10, PsiCenter[ang]-10)
+  br <- c(PhiCenter[ang]+10, PsiCenter[ang]-10)
+  
+  segments(x0 = tl[1], y0=tl[2], x1=tr[1], y1=tr[2])
+  segments(x0 = tl[1], y0=tl[2], x1=bl[1], y1=bl[2])
+  segments(x0 = br[1], y0=br[2], x1=bl[1], y1=bl[2])
+  segments(x0 = br[1], y0=br[2], x1=tr[1], y1=tr[2])
+}
+
+text(PhiCenter[1]+20, PsiCenter[1], labels=expression(beta))
+text(PhiCenter[2]+22, PsiCenter[2], labels=expression(paste(alpha, "'")))
+text(PhiCenter[3]+25, PsiCenter[3], labels=expression(alpha[L]))
+text(PhiCenter[4]+25, PsiCenter[4], labels=expression(alpha[R]))
+text(PhiCenter[5]+30, PsiCenter[5], labels=expression(PPII))
+
+
+
+
+
+
+
+
+mat <- corr360[["correlaciones_decala-eqNVE_1_112_resol360_global"]][["correlaciones_decala-eqNVE_1_112_resol360_Phi1-Psi0-global.matrix"]]
+mat <- t(mat)
+par(pin = c(3.32, 2.75))
+image2D(x = x, y = y, z = mat, 
+        main = expression(paste("Correlación entre ", Delta*Phi[i+1], " y ", Delta*Psi[i])), 
+        lighting = F, clog = F, clab = "r",
+        xlab = expression(Phi[i]), ylab = expression(Psi[i]), xlim = c(-180, 180), 
+        ylim = c(-180, 180), rasterImage = T, zlim = c(-1, 1),
+        contour = F, asp = 1, xaxt = "n", yaxt = "n")
+par(pin = c(3.32, 2.75))
+axis(side = 2, at=axpos, labels = axtext, cex.axis = 0.70)
+axis(side = 1, at=axpos, labels = axtext, cex.axis = 0.70)
+
+for(ang in seq(length(PhiCenter))){
+  tl <- c(PhiCenter[ang]-10, PsiCenter[ang]+10)
+  tr <- c(PhiCenter[ang]+10, PsiCenter[ang]+10)
+  bl <- c(PhiCenter[ang]-10, PsiCenter[ang]-10)
+  br <- c(PhiCenter[ang]+10, PsiCenter[ang]-10)
+  
+  segments(x0 = tl[1], y0=tl[2], x1=tr[1], y1=tr[2])
+  segments(x0 = tl[1], y0=tl[2], x1=bl[1], y1=bl[2])
+  segments(x0 = br[1], y0=br[2], x1=bl[1], y1=bl[2])
+  segments(x0 = br[1], y0=br[2], x1=tr[1], y1=tr[2])
+}
+
+text(PhiCenter[1]+20, PsiCenter[1], labels=expression(beta))
+text(PhiCenter[2]+22, PsiCenter[2], labels=expression(paste(alpha, "'")))
+text(PhiCenter[3]+25, PsiCenter[3], labels=expression(alpha[L]))
+text(PhiCenter[4]+25, PsiCenter[4], labels=expression(alpha[R]))
+text(PhiCenter[5]+30, PsiCenter[5], labels=expression(PPII))
+
+
+
+
+
+
+mat <- corr360[["correlaciones_decala-eqNVE_1_112_resol360_global"]][["correlaciones_decala-eqNVE_1_112_resol360_Phi1-Psi-1-global.matrix"]]
+mat <- t(mat)
+par(pin = c(3.32, 2.75))
+image2D(x = x, y = y, z = mat, 
+        main = expression(paste("Correlación entre ", Delta*Phi[i+1], " y ", Delta*Psi[i-1])), 
+        lighting = F, clog = F, clab = "r",
+        xlab = expression(Phi[i]), ylab = expression(Psi[i]), xlim = c(-180, 180), 
+        ylim = c(-180, 180), rasterImage = T, zlim = c(-1, 1),
+        contour = F, asp = 1, xaxt = "n", yaxt = "n")
+par(pin = c(3.32, 2.75))
+axis(side = 2, at=axpos, labels = axtext, cex.axis = 0.70)
+axis(side = 1, at=axpos, labels = axtext, cex.axis = 0.70)
+
+for(ang in seq(length(PhiCenter))){
+  tl <- c(PhiCenter[ang]-10, PsiCenter[ang]+10)
+  tr <- c(PhiCenter[ang]+10, PsiCenter[ang]+10)
+  bl <- c(PhiCenter[ang]-10, PsiCenter[ang]-10)
+  br <- c(PhiCenter[ang]+10, PsiCenter[ang]-10)
+  
+  segments(x0 = tl[1], y0=tl[2], x1=tr[1], y1=tr[2])
+  segments(x0 = tl[1], y0=tl[2], x1=bl[1], y1=bl[2])
+  segments(x0 = br[1], y0=br[2], x1=bl[1], y1=bl[2])
+  segments(x0 = br[1], y0=br[2], x1=tr[1], y1=tr[2])
+}
+
+text(PhiCenter[1]+20, PsiCenter[1], labels=expression(beta))
+text(PhiCenter[2]+22, PsiCenter[2], labels=expression(paste(alpha, "'")))
+text(PhiCenter[3]+25, PsiCenter[3], labels=expression(alpha[L]))
+text(PhiCenter[4]+25, PsiCenter[4], labels=expression(alpha[R]))
+text(PhiCenter[5]+30, PsiCenter[5], labels=expression(PPII))
+
+```
+
+
+```{r}
+mat <- diagramas[["global"]]
+
+x <- seq(-180, 179)
+y <- seq(-180, 179)
+
+axpos <- seq(-150, 150, 50)
+axtext <- as.character(axpos)
+axtext <- paste(axtext, "º", sep = "")
+
+par(pin = c(3.32, 2.75))
+image2D(x = x, y = y, z = mat, 
+        main = "Diagrama de Ramachandran", cex.main = 1,
+        lighting = F, clog = T, 
+        colkey = list(side = 4, side.clab = 3, cex.axis = 0.7, width = 0.75,
+                      cex.clab = 0.8),
+        clab = "(en %)",
+        xlab = expression(Phi), ylab = expression(Psi), xlim = c(-180, 180), 
+        ylim = c(-180, 180), rasterImage = T,
+        contour = F, asp = 1, xaxt = "n", yaxt = "n")
+
+par(pin = c(3.32, 2.75))
+axis(side = 2, at=axpos, labels = axtext, cex.axis = 0.70)
+axis(side = 1, at=axpos, labels = axtext, cex.axis = 0.70)
+
+for(ang in seq(length(PhiCenter))){
+  tl <- c(PhiCenter[ang]-10, PsiCenter[ang]+10)
+  tr <- c(PhiCenter[ang]+10, PsiCenter[ang]+10)
+  bl <- c(PhiCenter[ang]-10, PsiCenter[ang]-10)
+  br <- c(PhiCenter[ang]+10, PsiCenter[ang]-10)
+  
+  segments(x0 = tl[1], y0=tl[2], x1=tr[1], y1=tr[2])
+  segments(x0 = tl[1], y0=tl[2], x1=bl[1], y1=bl[2])
+  segments(x0 = br[1], y0=br[2], x1=bl[1], y1=bl[2])
+  segments(x0 = br[1], y0=br[2], x1=tr[1], y1=tr[2])
+}
+
+text(PhiCenter[1]+20, PsiCenter[1], labels=expression(beta))
+text(PhiCenter[2]+22, PsiCenter[2], labels=expression(paste(alpha, "'")))
+text(PhiCenter[3]+25, PsiCenter[3], labels=expression(alpha[L]))
+text(PhiCenter[4]+25, PsiCenter[4], labels=expression(alpha[R]))
+text(PhiCenter[5]+30, PsiCenter[5], labels=expression(PPII))
+```
+
+
+```{r}
+drama <- diagramas[["global"]]
+dens.region <- c()
+
+drama[is.na(drama)] <- 0
+#sum(drama) #100%
+
+PhiCenter = c(-157, -97, 61, -63, -62)
+PsiCenter = c(164, 2, 46, -41, 147)
+
+PhiCenter <- PhiCenter+180
+PsiCenter <- PsiCenter+180
+
+for(r in seq(length(PhiCenter))){
+  rfrom <- PhiCenter[r]-10
+  rto <- PhiCenter[r]+10
+  cfrom <- PsiCenter[r]-10
+  cto <- PsiCenter[r]+10
+  
+  reg <- drama[rfrom:rto, cfrom:cto]
+  dens.region <- c(dens.region, sum(reg))
+}
+
+regiones <- c("Beta", "Alfa\'", "Alfa L", "Alfa R", "ppII")
+
+dens.regiones <- rbind(t(as.matrix(regiones)), round(dens.region, 4))
+print(dens.regiones)
+
+```
+
+
+```{r}
+drama <- diagramas[["global"]]
+dens.region <- c()
+
+drama[is.na(drama)] <- 0
+#sum(drama) #100%
+
+PhiCenter <- maximos.locales[["global"]]$Phi
+PsiCenter <- maximos.locales[["global"]]$Psi 
+
+PhiCenter <- PhiCenter+180
+PsiCenter <- PsiCenter+180
+
+for(r in seq(length(PhiCenter))){
+  rfrom <- PhiCenter[r]-10
+  rto <- PhiCenter[r]+10
+  cfrom <- PsiCenter[r]-10
+  cto <- PsiCenter[r]+10
+  
+  reg <- drama[rfrom:rto, cfrom:cto]
+  dens.region <- c(dens.region, sum(reg))
+}
+
+dens.regiones <- rbind(t(as.matrix(PhiCenter-180)), t(as.matrix(PsiCenter-180)),
+                       round(dens.region, 4))
+print(dens.regiones)
+
+```
+
+```{r}
+dcorr <- corr360[["correlaciones_decala-eqNVE_1_112_resol360_global"]][["correlaciones_decala-eqNVE_1_112_resol360_Phi0-Psi-1-global.matrix"]]
+
+dcorr[dcorr < -3] <- NA
+mean(dcorr, na.rm = T)
+
+
+dcorr <- corr360[["correlaciones_decala-eqNVE_1_112_resol360_global"]][["correlaciones_decala-eqNVE_1_112_resol360_Phi0-Psi0-global.matrix"]]
+
+dcorr[dcorr < -3] <- NA
+mean(dcorr, na.rm = T)
+
+
+dcorr <- corr360[["correlaciones_decala-eqNVE_1_112_resol360_global"]][["correlaciones_decala-eqNVE_1_112_resol360_Phi1-Psi-1-global.matrix"]]
+
+dcorr[dcorr < -3] <- NA
+mean(dcorr, na.rm = T)
+
+
+dcorr <- corr360[["correlaciones_decala-eqNVE_1_112_resol360_global"]][["correlaciones_decala-eqNVE_1_112_resol360_Phi1-Psi0-global.matrix"]]
+
+dcorr[dcorr < -3] <- NA
+mean(dcorr, na.rm = T)
+
+
+```
+
+```{r}
+
+PhiCenter = c(-157, -97, 61, -63, -62)
+PsiCenter = c(164, 2, 46, -41, 147)
+
+
+mat <- corr360[["correlaciones_decala-eqNVE_1_112_resol360_global"]][["correlaciones_decala-eqNVE_1_112_resol360_Phi0-Psi-1-global.matrix"]]
+mat <- t(mat)
+par(pin = c(3.32, 2.75))
+image2D(x = x, y = y, z = mat, 
+        main = expression(paste("Correlación entre ", Phi[i], " y ", Psi[i-1])), 
+        lighting = F, clog = F, clab = "r",
+        xlab = expression(Phi[i]), ylab = expression(Psi[i]), xlim = c(-180, 180), 
+        ylim = c(-180, 180), rasterImage = T, zlim = c(-0.65, -0.35),
+        contour = F, asp = 1, cex.axis = 0.75)
+for(ang in seq(length(PhiCenter))){
+  tl <- c(PhiCenter[ang]-10, PsiCenter[ang]+10)
+  tr <- c(PhiCenter[ang]+10, PsiCenter[ang]+10)
+  bl <- c(PhiCenter[ang]-10, PsiCenter[ang]-10)
+  br <- c(PhiCenter[ang]+10, PsiCenter[ang]-10)
+  
+  segments(x0 = tl[1], y0=tl[2], x1=tr[1], y1=tr[2])
+  segments(x0 = tl[1], y0=tl[2], x1=bl[1], y1=bl[2])
+  segments(x0 = br[1], y0=br[2], x1=bl[1], y1=bl[2])
+  segments(x0 = br[1], y0=br[2], x1=tr[1], y1=tr[2])
+}
+
+text(PhiCenter[1]+20, PsiCenter[1], labels=expression(beta))
+text(PhiCenter[2]+22, PsiCenter[2], labels=expression(paste(alpha, "'")))
+text(PhiCenter[3]+25, PsiCenter[3], labels=expression(alpha[L]))
+text(PhiCenter[4]+25, PsiCenter[4], labels=expression(alpha[R]))
+text(PhiCenter[5]+30, PsiCenter[5], labels=expression(ppII))
+
+
+
+mat <- corr360[["correlaciones_decala-eqNVE_1_112_resol360_global"]][["correlaciones_decala-eqNVE_1_112_resol360_Phi1-Psi0-global.matrix"]]
+mat <- t(mat)
+par(pin = c(3.32, 2.75))
+image2D(x = x, y = y, z = mat, 
+        main = expression(paste("Correlación entre ", Phi[i+1], " y ", Psi[i])), 
+        lighting = F, clog = F, clab = "r",
+        xlab = expression(Phi[i]), ylab = expression(Psi[i]), xlim = c(-180, 180), 
+        ylim = c(-180, 180), rasterImage = T, zlim = c(-0.65, -0.35),
+        contour = F, asp = 1, cex.axis = 0.75)
+for(ang in seq(length(PhiCenter))){
+  tl <- c(PhiCenter[ang]-10, PsiCenter[ang]+10)
+  tr <- c(PhiCenter[ang]+10, PsiCenter[ang]+10)
+  bl <- c(PhiCenter[ang]-10, PsiCenter[ang]-10)
+  br <- c(PhiCenter[ang]+10, PsiCenter[ang]-10)
+  
+  segments(x0 = tl[1], y0=tl[2], x1=tr[1], y1=tr[2])
+  segments(x0 = tl[1], y0=tl[2], x1=bl[1], y1=bl[2])
+  segments(x0 = br[1], y0=br[2], x1=bl[1], y1=bl[2])
+  segments(x0 = br[1], y0=br[2], x1=tr[1], y1=tr[2])
+}
+
+text(PhiCenter[1]+20, PsiCenter[1], labels=expression(beta))
+text(PhiCenter[2]+22, PsiCenter[2], labels=expression(paste(alpha, "'")))
+text(PhiCenter[3]+25, PsiCenter[3], labels=expression(alpha[L]))
+text(PhiCenter[4]+25, PsiCenter[4], labels=expression(alpha[R]))
+text(PhiCenter[5]+30, PsiCenter[5], labels=expression(ppII))
+
+
+
+
+
+
+
+```
+
+
+
+
+
+
+
+
+
+
+
