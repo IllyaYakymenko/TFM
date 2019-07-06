@@ -1,3 +1,22 @@
+    
+!	#############################################################################
+!	#
+!	#   Obtención de distribuciones, medias y desviaciones estándar
+!	#   
+!	#   Input: Channel 10 (fichero _raman.dat)
+!	#   Output: Channel 21-28: Histogramas de distribuciones:
+! #                      21 = dPhi
+! #                      22 = dPsi
+! #                      23 = dT (módulo)
+! #                      24 = dTs (módulo dependiente de signos)
+! #                      25 = dTCuad (módulo^2)
+! #                      26 = dPhi+dPhi (suma)
+! #                      27 = dPhi-dPsi (resta)
+! #                      28 = dTCuadSigno
+!	#           Channel 30: Medias y desviaciones estándar de las distribuciones
+!	#
+!	#############################################################################
+
 program distribuciones
 
 implicit none
@@ -37,9 +56,11 @@ read(5,*) PhiCenter, PsiCenter, PhiRango, PsiRango
 read(5,*) resol
 read(5,*) PhiRel, PsiRel
 
-! resolTCuad = resol*10 ! Valor del límite muy elevado para el histograma
-
 numaa=nrow/2
+
+! Evaluación de los aminoácidos a analizar
+! Su valor depende de la relatividad de los ángulos
+! En casos de PhiRel y PsiRel distinta a 0 hay aminoácidos que no se analizarían
 
 from = 1
 to = numaa
@@ -84,6 +105,8 @@ allocate(desps(nrow))
 ! 7 = Phi-Psi (resta)
 ! 8 = TCuadSigno
 
+! Delimitación de la región a analizar
+
 infPhi = (PhiCenter - PhiRango)
 supPhi = (PhiCenter + PhiRango)
 infPsi = (PsiCenter - PhiRango)
@@ -94,9 +117,9 @@ if(supPhi.gt.180) supPhi = supPhi-360
 if(infPsi.lt.-180) infPsi = infPsi+360
 if(supPsi.gt.180) supPsi = supPsi-360
 
-! print*, infPhi, supPhi, infPsi, supPsi
-
 print '("Registrando datos entre Phi(", f7.2, ":", f7.2, "); Psi(", f7.2, ":", f7.2, ")")', infPhi, supPhi, infPsi, supPsi
+
+! Matrices vacias (nulas)
 
 do ind1=1, 8
 	do ind2=1, 2
@@ -140,6 +163,9 @@ do fileind=1, numfiles
 			Phi = diedros((2*aa-1)+2*PhiRel)
 			Psi = diedros(2*aa + 2*PsiRel)
 
+			! Si el aminoácido se encuentra en el límite de conformaciones especificado se efectúan los cálculos
+			! Se registra la densidad como sumatorio para la posición correspondiente
+
 			if((Phi.ge.infPhi).and.(Phi.le.supPhi).and.(Psi.ge.infPsi).and.(Psi.le.supPsi)) then
 				N(aa) = N(aa)+1
 				N(to+1) = N(to+1)+1
@@ -153,6 +179,9 @@ do fileind=1, numfiles
 				dTs = dT
 				dTCuadsigno = dTCuad
 
+				! Distinción de los desplazamientos por signo
+				! sclas = 1 para desplazamientos con mismo signo
+				! sclas = 2 para desplazamientos de signo contrario
 				sclas = 1
 				if(((dPhi.gt. 0.d0).and.(dPsi.lt. 0.d0)).or.((dPhi.lt. 0.d0).and.(dPsi.gt. 0.d0))) then
 					dTs = dTs*(-1)
@@ -160,6 +189,10 @@ do fileind=1, numfiles
 					sclas = 2
 				end if
 
+				! Establecimiento de los valores límite de la simulación
+				! 1 para límite inferior, 2 para límite superior
+				
+				! Registro de los sumatorios para determinar la media de cada distribución
 				Nsigno(aa, sclas) = Nsigno(aa, sclas) +1
 				Nsigno(to+1, sclas) = Nsigno(to+1, sclas) +1
 
@@ -225,15 +258,16 @@ do ind1=1, 8
 	liminf = limites(ind1, 1)
 	limsup = limites(ind1, 2)
 
+	! Cálculo de medias
 	do aa=from, to+1
 		medias(aa,ind1) = sumatorio(aa,ind1)/N(aa)
 	end do
 
+	! Rango de las distribuciones: (int(valor mínimo) -1, int(valor máximo) +1)
 	rangodist(ind1) = int(((int(limsup)+1)-(int(liminf)-1))/resol) + 1
 end do
-	
-! rangodist(5) = int(((int(limites(5,2))+1)-(int(limites(5,1))-1))/resol) + 1
 
+! Medias con distinción por signo
 do aa=from, to+1
 	do ind1=1, 2
 		mediaTsigno(aa, ind1) = sumaTsigno(aa,ind1)/Nsigno(aa, ind1)
@@ -251,6 +285,8 @@ allocate(distresta(from:to+1, 2, rangodist(7)))
 allocate(distTCuadsigno(from:to+1, 2, rangodist(8)))
 
 ! Iniciación de los histogramas de distribución
+! Se realiza en bucles separados debido a la asignación de las tablas dinámicas
+! El rango establecido en cada histograma maximiza la eficiencia del cómputo
 
 do aa=from, to+1
 	do ind1=1, rangodist(1)
@@ -352,6 +388,8 @@ do fileind=1, numfiles
 					sclas = 2
 				end if
 				
+				! Registro de los sumatorios de cada rango del histograma
+				! Registro de los sumatorios para el cálculo de la desviación estándar
 				posPhi = int((dPhi - (int(limites(1,1))-1))/resol) +1
 				distPhi(aa, 2, posPhi) = distPhi(aa, 2, posPhi) +1
 				distPhi(to+1, 2, posPhi) = distPhi(to+1, 2, posPhi) +1
@@ -416,6 +454,8 @@ do fileind=1, numfiles
 	close(10)
 end do
 
+! Cálculo de desviaciones estándar
+
 do aa=from, to+1
 	do ind1=1, 8
 		G(aa,ind1) = sqrt(sumaG(aa,ind1)/N(aa))
@@ -428,6 +468,8 @@ do aa=from, to+1
 		GCuadsigno(aa, ind1) = sqrt(sumaGCuadsigno(aa, ind1)/Nsigno(aa, ind1))
 	end do
 end do
+
+! Normalización (sobre 100) de los histogramas
 
 do aa=from, to+1
 	do ind1=1, rangodist(1)
@@ -478,7 +520,7 @@ do aa=from, to+1
 end do
 
 
-! Escribiendo los datos en ficheros
+! Escritura los datos en ficheros
 
 glob = "Global"
 
