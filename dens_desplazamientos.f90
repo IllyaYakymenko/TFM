@@ -1,3 +1,14 @@
+    
+!	#################################################################################
+!	#
+!	#   Obtención del mapa de densidades de los desplazamientos
+!	#   
+!	#   Input: Channel 10 (fichero _raman.dat)
+!	#   Output: Channel 20: Mapa de densidades DeltaPhi/DeltaPsi
+!	#	          Channel 30: Mapa de densidades DeltaPhi+DeltaPsi/DeltaPhi-DeltaPsi
+!	#
+!	#################################################################################
+
 program dens_desplazamientos
 
 implicit none
@@ -33,6 +44,10 @@ read(5,*) PhiRel, PsiRel
 allRango = int((limRango*2) / resol)
 numaa = nrow/2
 
+! Evaluación de los aminoácidos a analizar
+! Su valor depende de la relatividad de los ángulos
+! En casos de PhiRel y PsiRel distinta a 0 hay aminoácidos que no se analizarían
+
 from = 1
 to = numaa
 
@@ -52,6 +67,8 @@ allocate(desps(nrow))
 allocate(densPhiPsi(allRango, allRango))
 allocate(denssumaresta(allRango, allRango))
 
+! Delimitación de la región a analizar
+
 infPhi = (PhiCenter - PhiRango)
 supPhi = (PhiCenter + PhiRango)
 infPsi = (PsiCenter - PhiRango)
@@ -63,6 +80,8 @@ if(infPsi.lt.-180) infPsi = infPsi+360
 if(supPsi.gt.180) supPsi = supPsi-360
 
 print '("Registrando datos entre Phi(", f7.2, ":", f7.2, "); Psi(", f7.2, ":", f7.2, ")")', infPhi, supPhi, infPsi, supPsi
+
+! Matrices vacias (nulas)
 
 do ind1=1, allRango
 	do ind2=1, allRango
@@ -90,6 +109,8 @@ do fileind=1, numfiles
 			Phi = diedros(2*aa-1 + 2*PhiRel)
 			Psi = diedros(2*aa + 2*PsiRel)
 
+			! Si el aminoácido se encuentra en el límite de conformaciones especificado se efectúan los cálculos
+			! Se registra la densidad como sumatorio para la posición correspondiente
 			if((Phi.ge.infPhi).and.(Phi.le.supPhi).and.(Psi.ge.infPsi).and.(Psi.le.supPsi)) then
 				N = N+1
 
@@ -116,12 +137,16 @@ do fileind=1, numfiles
 	close(10)
 end do
 
+! Normalización (sobre 100) de las densidades
+
 do ind1=1, allRango
 	do ind2=1, allRango
 		densPhiPsi(ind1, ind2) = (densPhiPsi(ind1, ind2)/N)*100
 		denssumaresta(ind1, ind2) = (denssumaresta(ind1, ind2)/N)*100
 	end do
 end do
+
+! Escritura de los mapas
 
 do ind1=1, allRango
 	write(20, *) (densPhiPsi(ind1, ind2), ind2=1, allRango) 
