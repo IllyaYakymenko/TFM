@@ -4,7 +4,7 @@
 ! #   
 ! #   Input: Channel 10 (fichero _raman.dat)
 ! #   Output: Channel 20: Mapa Sigma Phi(i) 
-! #	                  21: Mapa Sigma Psi(i)
+! #                   21: Mapa Sigma Psi(i)
 ! #                   22: Mapa Sigma Phi(i+1)
 ! #                   23: Mapa Sigma Psi(i-1)
 ! #
